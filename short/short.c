@@ -336,9 +336,12 @@ struct file_operations short_i_fops = {
 irqreturn_t short_interrupt(int irq, void *dev_id)
 {
 	struct timeval tv;
+	struct timespec64 ts64;
 	int written;
 
-	do_gettimeofday(&tv);
+	ktime_get_real_ts64(&ts64);
+	tv.tv_sec = ts64.tv_sec;
+	tv.tv_usec = ts64.tv_nsec / 1000;
 
 	    /* Write a 16 byte record. Assume PAGE_SIZE is a multiple of 16 */
 	written = sprintf((char *)short_head,"%08u.%06u\n",
@@ -412,8 +415,13 @@ void short_do_tasklet (unsigned long unused)
 
 irqreturn_t short_wq_interrupt(int irq, void *dev_id)
 {
+	struct timespec64 ts64;
+	ktime_get_real_ts64(&ts64);
+
 	/* Grab the current time information. */
-	do_gettimeofday((struct timeval *) tv_head);
+	((struct timeval *) tv_head)->tv_sec = ts64.tv_sec;
+	((struct timeval *) tv_head)->tv_usec = ts64.tv_nsec / 1000;
+
 	short_incr_tv(&tv_head);
 
 	/* Queue the bh. Don't worry about multiple enqueueing */
@@ -430,7 +438,12 @@ irqreturn_t short_wq_interrupt(int irq, void *dev_id)
 
 irqreturn_t short_tl_interrupt(int irq, void *dev_id)
 {
-	do_gettimeofday((struct timeval *) tv_head); /* cast to stop 'volatile' warning */
+	struct timespec64 ts64;
+	ktime_get_real_ts64(&ts64); /* cast to stop 'volatile' warning */
+
+	((struct timeval *) tv_head)->tv_sec = ts64.tv_sec;
+	((struct timeval *) tv_head)->tv_usec = ts64.tv_nsec / 1000;
+
 	short_incr_tv(&tv_head);
 	tasklet_schedule(&short_tasklet);
 	short_wq_count++; /* record that an interrupt arrived */
@@ -443,6 +456,7 @@ irqreturn_t short_tl_interrupt(int irq, void *dev_id)
 irqreturn_t short_sh_interrupt(int irq, void *dev_id)
 {
 	int value, written;
+	struct timespec64 ts64;
 	struct timeval tv;
 
 	/* If it wasn't short, return immediately */
@@ -455,7 +469,10 @@ irqreturn_t short_sh_interrupt(int irq, void *dev_id)
 
 	/* the rest is unchanged */
 
-	do_gettimeofday(&tv);
+	ktime_get_real_ts64(&ts64);
+	tv.tv_sec = ts64.tv_sec;
+	tv.tv_usec = ts64.tv_nsec / 1000;
+
 	written = sprintf((char *)short_head,"%08u.%06u\n",
 			(int)(tv.tv_sec % 100000000), (int)(tv.tv_usec));
 	short_incr_bp(&short_head, written);

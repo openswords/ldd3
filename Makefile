@@ -1,8 +1,9 @@
 
 # disabled (not compiling on 5.0+): sbull snull short
-SUBDIRS =  misc-progs misc-modules \
-           skull scull scullc scullp sculld scullv shortprint simple tty \
-	   pci usb lddbus
+# SUBDIRS =  misc-progs misc-modules \
+#            skull scull scullc scullp sculld scullv shortprint simple tty \
+# 	   pci usb lddbus
+SUBDIRS = short
 
 all: subdirs
 
